@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NightfallWebHookServer", "NightfallWebHookServer\NightfallWebHookServer.csproj", "{98CA3EA5-1D5E-41FB-8436-EACFC92EE722}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nightfall.Net", "..\Nightfall.Net\Nightfall.Net\Nightfall.Net.csproj", "{996632C4-5D48-46AA-917D-0528F141B4A6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{98CA3EA5-1D5E-41FB-8436-EACFC92EE722}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{98CA3EA5-1D5E-41FB-8436-EACFC92EE722}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{98CA3EA5-1D5E-41FB-8436-EACFC92EE722}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{98CA3EA5-1D5E-41FB-8436-EACFC92EE722}.Release|Any CPU.Build.0 = Release|Any CPU
+		{996632C4-5D48-46AA-917D-0528F141B4A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{996632C4-5D48-46AA-917D-0528F141B4A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{996632C4-5D48-46AA-917D-0528F141B4A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{996632C4-5D48-46AA-917D-0528F141B4A6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

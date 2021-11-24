@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "Hl0zubBVo63P1Q3p0nnhz9NHcw7gmSFFtrU6/wIeqv6CVMoxNYz7iw95SGU573AaRP7jXfpiyd7VmGCavD6fSw==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\TrakterV2\\Git\\Nightfall.Net\\NightfallWebHookServer\\NightfallWebHookServer\\NightfallWebHookServer.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\TrakterV2\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\3.1.11\\microsoft.netcore.app.host.win-x64.3.1.11.nupkg.sha512"
+  ],
+  "logs": []
+}
