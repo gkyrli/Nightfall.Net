@@ -7,7 +7,7 @@ class Program
     {
         static async Task Main(string[] args)
         {
-            var nightfallClient = new NightfallClient("NF-QqTauC5PD1XjeTrSGqC7k2Pv3Kio7BIW");
+            var nightfallClient = new NightfallClient("secret");
             await ScanRequest(nightfallClient);
             var scanFileRequest = await ScanFileRequest(nightfallClient);
 
