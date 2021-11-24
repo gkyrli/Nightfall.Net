@@ -11,7 +11,7 @@ Needs .Net Core 3.1
 # Installation
 For now clone and reference the Nightfall.Net.csproj file in Nightfall.Net/Nightfall.Net folder 
 
-*TODO: A Nuget will be provided *
+* TODO: A Nuget will be provided *
 
 # Samples
 
