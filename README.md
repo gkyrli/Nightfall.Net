@@ -70,9 +70,9 @@ class Program
 
 ## Sample Webhook server code for testing file scan endpoint
 
-Clone and run the NightfallWebHookServer provided in the repository.
-Download [ngrok](https://ngrok.com/) and use it to make the webhook server available publicly.
-The webhook url will look similar to this *https://fb71-128-0-214-119.ngrok.io/webhook/night*
-In the console app sample seen above replace *webhook_url_to_replace* with the url you got from ngrok concatenated with /webhook/night
+* Clone and run the NightfallWebHookServer provided in the repository.
+* Download [ngrok](https://ngrok.com/) and use it to make the webhook server available publicly.
+* The webhook url will look similar to this *https://fb71-128-0-214-119.ngrok.io/webhook/night*
+* In the console app sample seen above replace *webhook_url_to_replace* with the url you got from ngrok concatenated with /webhook/night
 
 
