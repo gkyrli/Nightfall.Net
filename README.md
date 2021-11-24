@@ -5,6 +5,16 @@ Register and sign in to create an API key. [Dashboard](https://app.nightfall.ai/
 
 Visit the developer documentation for more details about integrating with the Nightfall API. [Documentation](https://docs.nightfall.ai/docs/entities-and-terms-to-know)
 
+# Dependencies
+Needs .Net Core 3.1
+
+# Installation
+For now clone and reference the Nightfall.Net.csproj file in Nightfall.Net/Nightfall.Net folder 
+
+*TODO: A Nuget will be provided *
+
+# Samples
+
 Sample console code:
 ```
 class Program
