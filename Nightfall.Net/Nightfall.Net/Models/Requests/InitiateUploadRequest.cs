@@ -5,13 +5,13 @@ namespace Nightfall.Net.Models.Requests
     public class InitiateUploadRequest
     {
         [JsonPropertyName("fileSizeBytes")]
-        public int FileSizeBytes { get; set; }
+        public long FileSizeBytes { get; set; }
 
         public InitiateUploadRequest()
         {
             
         }
-        public InitiateUploadRequest(int fileSizeBytes)
+        public InitiateUploadRequest(long fileSizeBytes)
         {
             FileSizeBytes = fileSizeBytes;
         }

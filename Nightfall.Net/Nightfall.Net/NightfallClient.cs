@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -75,17 +76,21 @@ namespace Nightfall.Net
             var httpResponseMessage = await HttpClient.PostAsync(url, content);
             return await httpResponseMessage.Content.ReadAsStringAsync();
         }
-        
-        public async Task<UploadResponse> Upload(byte[] dataToUpload)
+
+        public async Task<UploadResponse> Upload(byte[] dataToUpload) => await Upload(new BufferedStream(new MemoryStream(dataToUpload)));
+
+        public async Task<UploadResponse> Upload(BufferedStream stream)
         {
-            var fileMetadata = await InitiateFileUpload(new InitiateUploadRequest(dataToUpload.Length));
+            var fileMetadata = await InitiateFileUpload(new InitiateUploadRequest(stream.Length));
             var url = $"https://api.nightfall.ai/v3/upload/{fileMetadata.Id}";
-            for (int i = 0; i < dataToUpload.Length; i += fileMetadata.ChunkSize)
+            for (int i = 0; i < stream.Length; i += fileMetadata.ChunkSize)
             {
                 HttpClient.DefaultRequestHeaders.TryAddWithoutValidation("X-Upload-Offset", i.ToString());
+                var currentChunkSize = Math.Min(fileMetadata.ChunkSize, fileMetadata.FileSizeBytes-i);
+                var dataToUpload = new byte[currentChunkSize];
+                stream.Read(dataToUpload, 0, currentChunkSize);
                 var response = await HttpClient.PatchAsync(url,
-                    new ByteArrayContent(dataToUpload, i,
-                        Math.Min(fileMetadata.ChunkSize, fileMetadata.FileSizeBytes)));
+                    new ByteArrayContent(dataToUpload));
                 if (!response.IsSuccessStatusCode)
                     throw new UploadException($"Could not update file properly, failed at {i + 1} chunk", fileMetadata);
                 HttpClient.DefaultRequestHeaders.Remove("X-Upload-Offset");
@@ -94,5 +99,7 @@ namespace Nightfall.Net
             return await BasePost<UploadResponse>(new object(),
                 $"https://api.nightfall.ai/v3/upload/{fileMetadata.Id}/finish");
         }
+        
+        
     }
 }
