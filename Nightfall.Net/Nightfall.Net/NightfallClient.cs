@@ -101,7 +101,7 @@ namespace Nightfall.Net
             {
                 var currentChunkSize = (int) Math.Min(fileMetadata.ChunkSize, fileMetadata.FileSizeBytes - i);
                 var dataToUpload = new byte[currentChunkSize];
-                stream.Read(dataToUpload, 0, currentChunkSize);
+                stream.Read(dataToUpload);
                 tasks.Add(HttpClient.PatchAsync(url, new ByteArrayContent(dataToUpload),
                     ("X-Upload-Offset", i.ToString())));
                 if (tasks.Count == concurrentUploads)

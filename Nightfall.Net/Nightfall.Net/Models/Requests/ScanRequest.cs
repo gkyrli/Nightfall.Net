@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
+using static Nightfall.Net.Models.DetectorType;
 
 namespace Nightfall.Net.Models.Requests
 {
@@ -123,11 +124,11 @@ namespace Nightfall.Net.Models.Requests
             ExclusionType = "WORD_LIST";
         }
     }
-    public enum MatchType
-    {
-        PARTIAL,
-        FULL
-    }
+
+
+    /// <summary>
+    /// Provides a configuration to let the api know how to mask the finding.
+    /// </summary>
     public class MaskConfig
     {
         [JsonPropertyName("maskingChar")]
@@ -160,6 +161,9 @@ namespace Nightfall.Net.Models.Requests
     {
     }
 
+    /// <summary>
+    /// Provide a string that is going to be used to replace the finding
+    /// </summary>
     public class SubstitutionConfig
     {
         [JsonPropertyName("substitutionPhrase")]
@@ -179,8 +183,17 @@ namespace Nightfall.Net.Models.Requests
     {
         [JsonPropertyName("publicKey")]
         public string PublicKey { get; set; }
+
+        public CryptoConfig(string publicKey)
+        {
+            PublicKey = publicKey;
+        }
     }
 
+    /// <summary>
+    /// An object that configures how any detected findings should be redacted when returned to the client. When this
+    /// configuration is provided as part of a request, exactly one of the four types of redaction should be set.
+    /// </summary>
     public class RedactionConfig
     {
         [JsonPropertyName("maskConfig")]
@@ -212,15 +225,35 @@ namespace Nightfall.Net.Models.Requests
             CryptoConfig = cryptoConfig;
             RemoveFinding = removeFinding;
         }
+
+        public RedactionConfig(InfoTypeSubstitutionConfig infoTypeSubstitutionConfig)
+        {
+            InfoTypeSubstitutionConfig = infoTypeSubstitutionConfig;
+        }
+
+        public RedactionConfig(SubstitutionConfig substitutionConfig)
+        {
+            SubstitutionConfig = substitutionConfig;
+        }
+
+        public RedactionConfig(MaskConfig maskConfig)
+        {
+            MaskConfig = maskConfig;
+        }
+
+        public RedactionConfig(CryptoConfig cryptoConfig)
+        {
+            CryptoConfig = cryptoConfig;
+        }
     }
 
     public class Detector
     {
         [JsonPropertyName("minNumFindings")]
-        public int MinNumFindings { get; set; }
+        public int MinNumFindings { get; set; } = 1;
 
         [JsonPropertyName("minConfidence")]
-        public string MinConfidence { get; set; }
+        public string MinConfidence { get; set; } = ConfidenceEnum.POSSIBLE.ToString();
 
         [JsonPropertyName("detectorUUID")]
         public string DetectorUUID { get; set; }
@@ -253,7 +286,8 @@ namespace Nightfall.Net.Models.Requests
         {
         }
 
-        public Detector(int minNumFindings = 1, ConfidenceEnum minConfidence = ConfidenceEnum.POSSIBLE, string detectorUuid = null,
+        public Detector(int minNumFindings = 1, ConfidenceEnum minConfidence = ConfidenceEnum.POSSIBLE,
+            string detectorUuid = null,
             string displayName = null, string detectorType = null, string nightfallDetector = null, Regex regex = null,
             WordList wordList = null, List<ContextRule> contextRules = null, List<ExclusionRule> exclusionRules = null,
             RedactionConfig redactionConfig = null)
@@ -270,19 +304,28 @@ namespace Nightfall.Net.Models.Requests
             ExclusionRules = exclusionRules;
             RedactionConfig = redactionConfig;
         }
+        
+        public Detector(string nightfallDetector)
+        {
+            DetectorType = NIGHTFALL_DETECTOR.ToString();
+            NightfallDetector = nightfallDetector;
+        }
+
+        public Detector(Regex regex)
+        {
+            DetectorType = REGEX.ToString();
+            Regex = regex;
+        }
+
+        public Detector(WordList wordList)
+        {
+            DetectorType = WORD_LIST.ToString();
+            WordList = wordList;
+        }
 
         public void SetConfidence(ConfidenceEnum confidence)
         {
             MinConfidence = confidence.ToString();
-        }
-
-        public enum ConfidenceEnum
-        {
-            VERY_UNLIKELY,
-            UNLIKELY,
-            POSSIBLE,
-            LIKELY,
-            VERY_LIKELY
         }
     }
 
@@ -297,21 +340,21 @@ namespace Nightfall.Net.Models.Requests
         [JsonPropertyName("detectors")]
         public ICollection<Detector> Detectors { get; }
 
-        private DetectionRule(string name, string logicalOp, ICollection<Detector> detectors = null)
+        private DetectionRule(string name, LogicalOperation logicalOp, ICollection<Detector> detectors = null)
         {
             Name = name;
-            LogicalOp = logicalOp;
+            LogicalOp = logicalOp.ToString();
             Detectors = detectors ?? new HashSet<Detector>();
         }
 
-        public static DetectionRule GetAnyDetectionRule(string name, ICollection<Detector> detectors = null)
+        public static DetectionRule GetANYDetectionRule(string name, ICollection<Detector> detectors = null)
         {
-            return new DetectionRule(name, "ANY", detectors);
+            return new DetectionRule(name, LogicalOperation.ANY, detectors);
         }
 
-        public static DetectionRule GetAndDetectionRule(string name)
+        public static DetectionRule GetALLDetectionRule(string name)
         {
-            return new DetectionRule(name, "ALL");
+            return new DetectionRule(name, LogicalOperation.ALL);
         }
 
         public void AddDetector(Detector detector)
@@ -323,17 +366,18 @@ namespace Nightfall.Net.Models.Requests
     public abstract class PolicyBase
     {
         [JsonPropertyName("webhookURL")]
-        public string WebhookURL { get;internal set; }
+        public string WebhookURL { get; internal set; }
+
         [JsonPropertyName("detectionRuleUUIDs")]
         public HashSet<string> DetectionRuleUUIDs { get; set; }
 
         [JsonPropertyName("detectionRules")]
         public List<DetectionRule> DetectionRules { get; set; }
 
-        public void AddDetectionRule(DetectionRule rule)
+        public void AddDetectionRule(params DetectionRule[] rule)
         {
             DetectionRules ??= new List<DetectionRule>();
-            DetectionRules.Add(rule);
+            DetectionRules.AddRange(rule);
         }
 
         public void AddDetectionRuleUUIDs(params string[] uuids)
@@ -345,10 +389,7 @@ namespace Nightfall.Net.Models.Requests
 
     public class Config : PolicyBase
     {
-        public Config(int contextBytes)
-        {
-            ContextBytes = contextBytes;
-        }
+        public Config(int contextBytes) => ContextBytes = contextBytes;
 
         [JsonPropertyName("contextBytes")]
         public int ContextBytes { get; set; }
@@ -359,15 +400,8 @@ namespace Nightfall.Net.Models.Requests
         [JsonPropertyName("config")]
         public virtual PolicyBase Config { get; set; }
 
-        public void AddDetectionRule(DetectionRule rule)
-        {
-            Config.AddDetectionRule(rule);
-        }
-
-        public void AddDetectionRuleUUids(params string[] uuids)
-        {
-            Config.AddDetectionRuleUUIDs(uuids);
-        }
+        public void AddDetectionRules(params DetectionRule[] rule) => Config.AddDetectionRule(rule);
+        public void AddDetectionRuleUUids(params string[] uuids) => Config.AddDetectionRuleUUIDs(uuids);
 
         protected ScanBase(PolicyBase config)
         {
