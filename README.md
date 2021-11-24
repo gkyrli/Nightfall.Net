@@ -1,9 +1,9 @@
 # Nightfall.Net
 
 
-Register and sign in to create an API key. [Dashboard]{https://app.nightfall.ai/developer-platform}
+Register and sign in to create an API key. [Dashboard](https://app.nightfall.ai/developer-platform)
 
-See our developer documentation for more details about integrating with the Nightfall API.
+Visit the developer documentation for more details about integrating with the Nightfall API. [Documentation](https://docs.nightfall.ai/docs/entities-and-terms-to-know)
 
 Sample console code:
 ```
