@@ -1,9 +1,0 @@
-C:\Users\TrakterV2\Git\Nightfall.Net\Nightfall.Net\Nightfall.Net\bin\Debug\netcoreapp3.1\Nightfall.Net.deps.json
-C:\Users\TrakterV2\Git\Nightfall.Net\Nightfall.Net\Nightfall.Net\bin\Debug\netcoreapp3.1\Nightfall.Net.dll
-C:\Users\TrakterV2\Git\Nightfall.Net\Nightfall.Net\Nightfall.Net\bin\Debug\netcoreapp3.1\Nightfall.Net.pdb
-C:\Users\TrakterV2\Git\Nightfall.Net\Nightfall.Net\Nightfall.Net\obj\Debug\netcoreapp3.1\Nightfall.Net.csprojAssemblyReference.cache
-C:\Users\TrakterV2\Git\Nightfall.Net\Nightfall.Net\Nightfall.Net\obj\Debug\netcoreapp3.1\Nightfall.Net.AssemblyInfoInputs.cache
-C:\Users\TrakterV2\Git\Nightfall.Net\Nightfall.Net\Nightfall.Net\obj\Debug\netcoreapp3.1\Nightfall.Net.AssemblyInfo.cs
-C:\Users\TrakterV2\Git\Nightfall.Net\Nightfall.Net\Nightfall.Net\obj\Debug\netcoreapp3.1\Nightfall.Net.csproj.CoreCompileInputs.cache
-C:\Users\TrakterV2\Git\Nightfall.Net\Nightfall.Net\Nightfall.Net\obj\Debug\netcoreapp3.1\Nightfall.Net.dll
-C:\Users\TrakterV2\Git\Nightfall.Net\Nightfall.Net\Nightfall.Net\obj\Debug\netcoreapp3.1\Nightfall.Net.pdb
