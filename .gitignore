@@ -14,4 +14,4 @@ bld/
 [Ll]og/
 [Ll]ogs/
 .idea/
-obj/
+*.cache

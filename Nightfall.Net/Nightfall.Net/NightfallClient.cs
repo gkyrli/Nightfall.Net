@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Nightfall.Net.Exceptions;
@@ -19,12 +21,22 @@ namespace Nightfall.Net
             DefaultRequestHeaders.TryAddWithoutValidation("Authorization", $"Bearer {apiKey}");
             DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/json");
         }
+
+        public async Task<HttpResponseMessage> PatchAsync(string url, HttpContent content,
+            params (string, string)[] headers)
+        {
+            using var request = new HttpRequestMessage(new HttpMethod("PATCH"), url) {Content = content};
+            foreach (var (key, value) in headers)
+                request.Headers.TryAddWithoutValidation(key, value);
+
+            return await SendAsync(request);
+        }
     }
 
     public class NightfallClient
     {
         private readonly string _apiKey;
-        private HttpClient HttpClient { get; set; }
+        private NightFallHttpClient HttpClient { get; set; }
 
         public HttpClientHandler CustomHttpClientHandler
         {
@@ -56,7 +68,7 @@ namespace Nightfall.Net
             var url = "https://api.nightfall.ai/v3/scan";
             return await BasePost(config, url);
         }
-        
+
         private async Task<UploadResponse> InitiateFileUpload(InitiateUploadRequest request)
         {
             var url = "https://api.nightfall.ai/v3/upload";
@@ -77,29 +89,37 @@ namespace Nightfall.Net
             return await httpResponseMessage.Content.ReadAsStringAsync();
         }
 
-        public async Task<UploadResponse> Upload(byte[] dataToUpload) => await Upload(new BufferedStream(new MemoryStream(dataToUpload)));
+        public async Task<UploadResponse> Upload(byte[] dataToUpload) =>
+            await Upload(new BufferedStream(new MemoryStream(dataToUpload)));
 
-        public async Task<UploadResponse> Upload(BufferedStream stream)
+        public async Task<UploadResponse> Upload(BufferedStream stream, int concurrentUploads = 2)
         {
             var fileMetadata = await InitiateFileUpload(new InitiateUploadRequest(stream.Length));
             var url = $"https://api.nightfall.ai/v3/upload/{fileMetadata.Id}";
-            for (int i = 0; i < stream.Length; i += fileMetadata.ChunkSize)
+            var tasks = new List<Task<HttpResponseMessage>>();
+            for (long i = 0; i < stream.Length; i += fileMetadata.ChunkSize)
             {
-                HttpClient.DefaultRequestHeaders.TryAddWithoutValidation("X-Upload-Offset", i.ToString());
-                var currentChunkSize = Math.Min(fileMetadata.ChunkSize, fileMetadata.FileSizeBytes-i);
+                var currentChunkSize = (int) Math.Min(fileMetadata.ChunkSize, fileMetadata.FileSizeBytes - i);
                 var dataToUpload = new byte[currentChunkSize];
                 stream.Read(dataToUpload, 0, currentChunkSize);
-                var response = await HttpClient.PatchAsync(url,
-                    new ByteArrayContent(dataToUpload));
-                if (!response.IsSuccessStatusCode)
-                    throw new UploadException($"Could not update file properly, failed at {i + 1} chunk", fileMetadata);
-                HttpClient.DefaultRequestHeaders.Remove("X-Upload-Offset");
+                tasks.Add(HttpClient.PatchAsync(url, new ByteArrayContent(dataToUpload),
+                    ("X-Upload-Offset", i.ToString())));
+                if (tasks.Count == concurrentUploads)
+                {
+                    await DoUploads(tasks, fileMetadata);
+                }
             }
-
+            await DoUploads(tasks, fileMetadata);
             return await BasePost<UploadResponse>(new object(),
                 $"https://api.nightfall.ai/v3/upload/{fileMetadata.Id}/finish");
         }
-        
-        
+
+        private static async Task DoUploads(ICollection<Task<HttpResponseMessage>> tasks, UploadResponse fileMetadata)
+        {
+            var responses = await Task.WhenAll(tasks);
+            if (responses.Any(x => !x.IsSuccessStatusCode))
+                throw new UploadException($"Could not update file properly, failed while uploading chunks", fileMetadata);
+            tasks.Clear();
+        }
     }
 }

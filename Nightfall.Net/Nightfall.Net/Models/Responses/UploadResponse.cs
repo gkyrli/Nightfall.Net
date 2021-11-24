@@ -7,7 +7,7 @@ namespace Nightfall.Net.Models.Responses
         [JsonPropertyName("id")]
         public string Id { get; set; }
         [JsonPropertyName("fileSizeBytes")]
-        public int FileSizeBytes { get; set; }
+        public long FileSizeBytes { get; set; }
         [JsonPropertyName("chunkSize")]
         public int ChunkSize { get; set; }
         [JsonPropertyName("mimeType")]
