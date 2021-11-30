@@ -27,12 +27,16 @@ class Program
 
             Console.WriteLine(scanFileRequest);
         }
-
+        
         private static async Task ScanRequest(NightfallClient nightfallClient)
         {
             var requestData = new ScanRequestConfig();
             requestData.AddPayload("192.168.162.5", "0.0.0.0", "1.1.1.1 dasdasd 129.0.0.2");
-            requestData.AddDetectionRuleUUids("b7d263e5-c7f9-43dc-b8ab-b972bcb7a0c2");
+            var anyDetectionRule = DetectionRule.GetANYDetectionRule("Any of the provided detectors");
+            var detector = new Detector(new Regex("192*"),"display")
+                .WithMaskRedactionConfig("*",null,1,true);
+            anyDetectionRule.AddDetector(detector);
+            requestData.AddDetectionRules(anyDetectionRule);
             var content = await nightfallClient.GetScanFindingsAsync(requestData);
             Console.WriteLine(JsonSerializer.Serialize(content));
         }
