@@ -27,7 +27,7 @@ namespace Nightfall.Net.Models.Requests
     public class WordList
     {
         [JsonPropertyName("values")]
-        public List<string> Values { get; set; }
+        public ICollection<string> Values { get; set; }
 
         [JsonPropertyName("isCaseSensitive")]
         public bool IsCaseSensitive { get; set; }
@@ -36,9 +36,14 @@ namespace Nightfall.Net.Models.Requests
         {
         }
 
-        public WordList(List<string> values = null, bool isCaseSensitive = default)
+        public WordList(ICollection<string> values = null, bool isCaseSensitive = default)
         {
             Values = values;
+            IsCaseSensitive = isCaseSensitive;
+        }
+        public WordList(string[] values = null, bool isCaseSensitive = default)
+        {
+            Values = values.ToList();
             IsCaseSensitive = isCaseSensitive;
         }
     }
@@ -70,6 +75,7 @@ namespace Nightfall.Net.Models.Requests
 
     public class ContextRule
     {
+        
         [JsonPropertyName("regex")]
         public Regex Regex { get; set; }
 
@@ -89,6 +95,13 @@ namespace Nightfall.Net.Models.Requests
             Regex = regex;
             Proximity = proximity;
             ConfidenceAdjustment = confidenceAdjustment;
+        }
+
+        public static ContextRule BuildContextRule(string pattern,bool caseSensitive=default, int windowBefore = 10, int windowAfter = 10,
+            ConfidenceEnum confidenceAdjustment = ConfidenceEnum.VERY_LIKELY)
+        {
+            return new ContextRule(new Regex(pattern, caseSensitive), new Proximity(windowBefore, windowAfter),
+                new ConfidenceAdjustment() {FixedConfidence = confidenceAdjustment.ToString()});
         }
     }
 
@@ -249,6 +262,8 @@ namespace Nightfall.Net.Models.Requests
 
     public class Detector
     {
+        public string DetectorUuid { get; }
+
         [JsonPropertyName("minNumFindings")]
         public int MinNumFindings { get; set; } = 1;
 
@@ -286,46 +301,101 @@ namespace Nightfall.Net.Models.Requests
         {
         }
 
-        public Detector(int minNumFindings = 1, ConfidenceEnum minConfidence = ConfidenceEnum.POSSIBLE,
-            string detectorUuid = null,
-            string displayName = null, string detectorType = null, string nightfallDetector = null, Regex regex = null,
-            WordList wordList = null, List<ContextRule> contextRules = null, List<ExclusionRule> exclusionRules = null,
-            RedactionConfig redactionConfig = null)
+        public Detector(string detectorUuid,int minNumFindings=1,ConfidenceEnum minConfidence=ConfidenceEnum.POSSIBLE )
         {
+            DetectorUuid = detectorUuid;
             MinNumFindings = minNumFindings;
             MinConfidence = minConfidence.ToString();
-            DetectorUUID = detectorUuid;
-            DisplayName = displayName;
-            DetectorType = detectorType;
-            NightfallDetector = nightfallDetector;
-            Regex = regex;
-            WordList = wordList;
-            ContextRules = contextRules;
-            ExclusionRules = exclusionRules;
-            RedactionConfig = redactionConfig;
         }
-        
-        public Detector(string nightfallDetector)
+        private Detector(string displayName, ConfidenceEnum minConfidence, int minNumFindings)
+        {
+            DisplayName = displayName;
+            MinNumFindings = minNumFindings;
+            MinConfidence = minConfidence.ToString();
+        }
+        public Detector(string nightfallDetector,string displayName=null,ConfidenceEnum minConfidence=ConfidenceEnum.POSSIBLE,int minNumFindings=1) : this(displayName, minConfidence, minNumFindings)
         {
             DetectorType = NIGHTFALL_DETECTOR.ToString();
             NightfallDetector = nightfallDetector;
         }
-
-        public Detector(Regex regex)
+        
+        public Detector(Regex regex,string displayName=null,ConfidenceEnum minConfidence=ConfidenceEnum.POSSIBLE,int minNumFindings=1) : this(displayName, minConfidence, minNumFindings)
         {
             DetectorType = REGEX.ToString();
             Regex = regex;
         }
-
-        public Detector(WordList wordList)
+        
+        public Detector(WordList wordList,string displayName=null,ConfidenceEnum minConfidence=ConfidenceEnum.POSSIBLE,int minNumFindings=1) : this(displayName, minConfidence, minNumFindings)
         {
             DetectorType = WORD_LIST.ToString();
             WordList = wordList;
         }
 
+
         public void SetConfidence(ConfidenceEnum confidence)
         {
             MinConfidence = confidence.ToString();
+        }
+
+        public Detector WithExclusionRules(params ExclusionRule[] exclusionRules)
+        {
+            ExclusionRules ??= new List<ExclusionRule>();
+            ExclusionRules.AddRange(exclusionRules);
+            return this;
+        }
+        public Detector WithRegexExclusionRule(MatchType matchType=MatchType.PARTIAL,string pattern = null, bool isCaseSensitive = default)
+        {
+            ExclusionRules ??= new List<ExclusionRule>();
+            ExclusionRules.Add(new ExclusionRule(matchType,new Regex(pattern,isCaseSensitive)));
+            return this;
+        }
+        public Detector WithWordListRule(MatchType matchType=MatchType.PARTIAL,ICollection<string> words = null, bool isCaseSensitive = default)
+        {
+            ExclusionRules ??= new List<ExclusionRule>();
+            ExclusionRules.Add(new ExclusionRule(matchType,new WordList(words,isCaseSensitive)));
+            return this;
+        }
+        public Detector WithContextRules(params ContextRule[] contextRules)
+        {
+            ContextRules ??= new List<ContextRule>();
+            ContextRules.AddRange(contextRules);
+            return this;
+        }
+        
+        public Detector WithContextRule(string pattern,bool isCaseSensitive=default, int windowBefore = 10, int windowAfter = 10,
+            ConfidenceEnum confidenceAdjustment = ConfidenceEnum.VERY_LIKELY)
+        {
+            ContextRules ??= new List<ContextRule>();
+            ContextRules.Add(ContextRule.BuildContextRule(pattern,isCaseSensitive,windowAfter,windowAfter,confidenceAdjustment));
+            return this;
+        }
+        
+        public Detector WithRedactionConfig(RedactionConfig redactionConfig)
+        {
+            RedactionConfig = redactionConfig;
+            return this;
+        }
+
+        public Detector WithCryptoRedactionConfig(string secretKey)
+        {
+            RedactionConfig=new RedactionConfig(new CryptoConfig(secretKey));
+            return this;
+        }
+        public Detector WithInfoTypeSubstitutionRedactionConfig()
+        {
+            RedactionConfig=new RedactionConfig(new InfoTypeSubstitutionConfig());
+            return this;
+        }
+        public Detector WithMaskRedactionConfig(string maskingChar, List<string> charsToIgnore, int numCharsToLeaveUnmasked,
+            bool maskLeftToRight)
+        {
+            RedactionConfig=new RedactionConfig(new MaskConfig(maskingChar,charsToIgnore,numCharsToLeaveUnmasked,maskLeftToRight));
+            return this;
+        }
+        public Detector WithSubstitutionRedactionConfig(string substitutionPhrase)
+        {
+            RedactionConfig=new RedactionConfig(new SubstitutionConfig(substitutionPhrase));
+            return this;
         }
     }
 
@@ -357,10 +427,42 @@ namespace Nightfall.Net.Models.Requests
             return new DetectionRule(name, LogicalOperation.ALL);
         }
 
+        public void AddUUidDetector(string uuid,int minNumFindings=1,ConfidenceEnum minConfidence=ConfidenceEnum.POSSIBLE )
+        {
+            Detectors.Add(new Detector(){DetectorUUID = uuid,MinNumFindings = minNumFindings,MinConfidence = minConfidence.ToString()});
+        }
         public void AddDetector(Detector detector)
         {
             Detectors.Add(detector);
         }
+
+        // public DetectionRule WithNightfallDetector(string nightfallDetector)
+        // {
+        //     Detectors.Add(new Detector(nightfallDetector));
+        //     return this;
+        // }
+        //
+        // public DetectionRule WithWords(ICollection<string> wordList,bool caseSensitive=default)
+        // {
+        //     Detectors.Add(new Detector(new WordList(wordList,caseSensitive)));
+        //     return this;
+        // }
+        //
+        // public DetectionRule WithWords(WordList wordList)
+        // {
+        //     Detectors.Add(new Detector(wordList));
+        //     return this;
+        // }
+        // public DetectionRule WithRegex(Regex regex)
+        // {
+        //     Detectors.Add(new Detector(regex));
+        //     return this;
+        // }
+        // public DetectionRule WithRegex(string pattern,bool isCaseSensitive=default)
+        // {
+        //     Detectors.Add(new Detector(new Regex(pattern,isCaseSensitive)));
+        //     return this;
+        // }
     }
 
     public abstract class PolicyBase
