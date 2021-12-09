@@ -4,6 +4,11 @@ Register and sign in to create an API key. [Dashboard](https://app.nightfall.ai/
 
 Visit the developer documentation for more details about integrating with the Nightfall API. [Documentation](https://docs.nightfall.ai/docs/entities-and-terms-to-know)
 
+# ToDo
+
+* Nuget for .NetCore3.1 & .Net6
+* Automate nuget package generation
+
 # Dependencies
 Needs .Net Core 3.1
 
