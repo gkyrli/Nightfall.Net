@@ -1,6 +1,5 @@
 # Nightfall.Net
 
-
 Register and sign in to create an API key. [Dashboard](https://app.nightfall.ai/developer-platform)
 
 Visit the developer documentation for more details about integrating with the Nightfall API. [Documentation](https://docs.nightfall.ai/docs/entities-and-terms-to-know)
@@ -13,6 +12,36 @@ For now clone and reference the Nightfall.Net.csproj file in Nightfall.Net/Night
 
 *TODO: A Nuget will be provided*
 
+# Various quality of life features 
+
+## DetectorGlossary Enum provides all the predefined detectors from nightfall.
+
+```
+new Detector(DetectorGlossary.IP_ADDRESS, "IpAddress provided detector")
+```
+## Derived Exceptions for every possible error the API can throw according to the [api reference](https://docs.nightfall.ai/reference/scanpayloadv3)
+Provided exception classes:
+```
+BaseNightfallException
+NightfallInvalidRequest400
+NightfallAuthenticationFailure401
+NightfallInvalidFileId404
+NightfallIncorrectFileState409
+NightfallUnprocessableRequestPayload422
+NightfallRateLimit429
+NightfallInternalServer500
+NightfallUnknownExceptionResponse 
+```
+
+## Detectors provide a fluent api allowing for a cleaner way of configuring your detector 
+```
+//Some examples
+WithRegexExclusionRule(MatchType matchType=MatchType.PARTIAL,string pattern = null, bool isCaseSensitive = default)
+WithContextRule(string pattern,bool isCaseSensitive=default, int windowBefore = 10, int windowAfter = 10,
+            ConfidenceEnum confidenceAdjustment = ConfidenceEnum.VERY_LIKELY)
+
+and more...
+```
 # Samples
 
 ## Sample console code:
@@ -21,21 +50,22 @@ class Program
     {
         static async Task Main(string[] args)
         {
-            var nightfallClient = new NightfallClient("secret");
+            var nightfallClient = new NightfallClient("your API-KEY");
             await ScanRequest(nightfallClient);
             var scanFileRequest = await ScanFileRequest(nightfallClient);
-
             Console.WriteLine(scanFileRequest);
         }
-        
+
         private static async Task ScanRequest(NightfallClient nightfallClient)
         {
             var requestData = new ScanRequestConfig();
             requestData.AddPayload("192.168.162.5", "0.0.0.0", "1.1.1.1 dasdasd 129.0.0.2");
             var anyDetectionRule = DetectionRule.GetANYDetectionRule("Any of the provided detectors");
-            var detector = new Detector(new Regex("192*"),"display")
-                .WithMaskRedactionConfig("*",null,1,true);
-            anyDetectionRule.AddDetector(detector);
+            // var detector = new Detector(new Regex("(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"),"display")
+            // .WithMaskRedactionConfig("*",null,1,true);
+            var detector = new Detector(DetectorGlossary.IP_ADDRESS, "IpAddress provided detector")
+            .WithMaskRedactionConfig("*", null, 1, true);
+            anyDetectionRule.AddDetectors(detector);
             requestData.AddDetectionRules(anyDetectionRule);
             var content = await nightfallClient.GetScanFindingsAsync(requestData);
             Console.WriteLine(JsonSerializer.Serialize(content));
@@ -43,11 +73,11 @@ class Program
 
         private static async Task<string> ScanFileRequest(NightfallClient nightfallClient)
         {
-            var requestData = new ScanUploadedRequest("webhook_url_to_replace",
+            var requestData = new ScanUploadedRequest("https://e307-93-109-43-66.ngrok.io/webhook/night",
                 requestMetadata: "its your test brooo");
             requestData.AddDetectionRuleUUids("b7d263e5-c7f9-43dc-b8ab-b972bcb7a0c2");
-            Console.WriteLine(JsonSerializer.Serialize(requestData));
 
+            Console.WriteLine(JsonSerializer.Serialize(requestData));
             var uploadFile = await UploadFile(nightfallClient);
             var content = await nightfallClient.GetScanFilePlainTextAsync(requestData, uploadFile.Id);
             return content;
@@ -55,8 +85,23 @@ class Program
 
         private static async Task<UploadResponse> UploadFile(NightfallClient nightfallClient)
         {
-            var dataToUpload = Encoding.ASCII.GetBytes(RandomStringUtil.GenerateRandomString(length: 100000));
-            return await nightfallClient.Upload(dataToUpload);
+            var dataToUpload = Encoding.ASCII.GetBytes(RandomStringUtil.GenerateRandomString(length: 3100000));
+            var stream = new BufferedStream(new MemoryStream(dataToUpload));
+            try
+            {
+                return await nightfallClient.Upload(stream);
+            }
+            //Specialize your logging depending on the exception received
+            catch (NightfallRateLimit429 e)
+            {
+                Console.WriteLine("Log rate limit exceeded");
+                throw;
+            }
+            catch (NightfallIncorrectFileState409 e)
+            {
+                Console.WriteLine(e.ApiErrorResponse.Dump());
+                throw;
+            }
         }
     }
     class RandomStringUtil
