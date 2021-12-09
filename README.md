@@ -19,13 +19,13 @@ For now clone and reference the Nightfall.Net.csproj file in Nightfall.Net/Night
 
 # Various quality of life features 
 
-## DetectorGlossary Enum provides all the predefined detectors from nightfall.
+### DetectorGlossary Enum provides all the predefined detectors from nightfall.
 
 ```
 new Detector(DetectorGlossary.IP_ADDRESS, "IpAddress provided detector")
 ```
-## Derived Exceptions for every possible error the API can throw according to the [api reference](https://docs.nightfall.ai/reference/scanpayloadv3)
-Provided exception classes:
+### Derived Exceptions for every possible error the API can throw according to the [api reference](https://docs.nightfall.ai/reference/scanpayloadv3)
+*Provided exception classes:
 ```
 BaseNightfallException
 NightfallInvalidRequest400
@@ -38,7 +38,7 @@ NightfallInternalServer500
 NightfallUnknownExceptionResponse 
 ```
 
-## Detectors provide a fluent api allowing for a cleaner way of configuring your detector 
+### Detectors provide a fluent api allowing for a cleaner way of configuring your detector 
 ```
 //Some examples
 WithRegexExclusionRule(MatchType matchType=MatchType.PARTIAL,string pattern = null, bool isCaseSensitive = default)
