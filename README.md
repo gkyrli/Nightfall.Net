@@ -25,7 +25,7 @@ For now clone and reference the Nightfall.Net.csproj file in Nightfall.Net/Night
 new Detector(DetectorGlossary.IP_ADDRESS, "IpAddress provided detector")
 ```
 ### Derived Exceptions for every possible error the API can throw according to the [api reference](https://docs.nightfall.ai/reference/scanpayloadv3)
-*Provided exception classes:
+*Provided exception classes:*
 ```
 BaseNightfallException
 NightfallInvalidRequest400
