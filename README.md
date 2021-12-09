@@ -121,6 +121,7 @@ class Program
 
 * Clone and run the NightfallWebHookServer provided in the repository.
 * Download [ngrok](https://ngrok.com/) and use it to make the webhook server available publicly.
+* Make sure you expose the NightfallWebHookServer using the http port for now. The https port is not working for now.
 * The webhook url will look similar to this *https://fb71-128-0-214-119.ngrok.io/webhook/night*
 * In the console app sample seen above replace *webhook_url_to_replace* with the url you got from ngrok concatenated with /webhook/night
 
