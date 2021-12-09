@@ -91,7 +91,7 @@ namespace Nightfall.Net.Models.Requests
             ExclusionRules.Add(new ExclusionRule(matchType,new Regex(pattern,isCaseSensitive)));
             return this;
         }
-        public Detector WithWordListRule(MatchType matchType=MatchType.PARTIAL,ICollection<string> words = null, bool isCaseSensitive = default)
+        public Detector WithWordListExclusionRule(MatchType matchType=MatchType.PARTIAL,ICollection<string> words = null, bool isCaseSensitive = default)
         {
             ExclusionRules ??= new List<ExclusionRule>();
             ExclusionRules.Add(new ExclusionRule(matchType,new WordList(words,isCaseSensitive)));
