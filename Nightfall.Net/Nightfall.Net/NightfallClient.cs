@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -9,6 +10,7 @@ using System.Threading.Tasks;
 using Nightfall.Net.Exceptions;
 using Nightfall.Net.Models.Requests;
 using Nightfall.Net.Models.Responses;
+using static Nightfall.Net.ApiExceptionFactory;
 
 namespace Nightfall.Net
 {
@@ -53,6 +55,7 @@ namespace Nightfall.Net
         {
             var content = new StringContent(JsonSerializer.Serialize(data));
             var httpResponseMessage = await HttpClient.PostAsync(url, content);
+            await HandleResponse(httpResponseMessage);
             return await httpResponseMessage.Content.ReadAsStringAsync();
         }
 
@@ -60,6 +63,7 @@ namespace Nightfall.Net
         {
             var content = new StringContent(JsonSerializer.Serialize(data));
             var httpResponseMessage = await HttpClient.PostAsync(url, content);
+            await HandleResponse(httpResponseMessage);
             return JsonSerializer.Deserialize<TOut>(await httpResponseMessage.Content.ReadAsStringAsync());
         }
 
@@ -86,12 +90,18 @@ namespace Nightfall.Net
             var url = $"https://api.nightfall.ai/v3/upload/{fileId}/scan";
             var content = new StringContent(JsonSerializer.Serialize(config));
             var httpResponseMessage = await HttpClient.PostAsync(url, content);
+            await HandleResponse(httpResponseMessage);
             return await httpResponseMessage.Content.ReadAsStringAsync();
         }
 
         public async Task<UploadResponse> Upload(byte[] dataToUpload) =>
             await Upload(new BufferedStream(new MemoryStream(dataToUpload)));
 
+        /// <summary>
+        /// Uploads the bytes in the provided stream
+        /// </summary>
+        /// <exception cref="BaseNightfallException"> May throw nightfall exceptions with codes (400,401,404,409,429,500)</exception>
+        /// <returns>An uploadResponse object with the relevant uploaded file metadata</returns>
         public async Task<UploadResponse> Upload(BufferedStream stream, int concurrentUploads = 2)
         {
             var fileMetadata = await InitiateFileUpload(new InitiateUploadRequest(stream.Length));
@@ -117,9 +127,39 @@ namespace Nightfall.Net
         private static async Task DoUploads(ICollection<Task<HttpResponseMessage>> tasks, UploadResponse fileMetadata)
         {
             var responses = await Task.WhenAll(tasks);
-            if (responses.Any(x => !x.IsSuccessStatusCode))
-                throw new UploadException($"Could not update file properly, failed while uploading chunks", fileMetadata);
+            foreach (var httpResponseMessage in responses)
+            {
+                await HandleResponse(httpResponseMessage);
+            }
             tasks.Clear();
+        }
+    }
+
+    public static class ApiExceptionFactory
+    {
+        public static async Task HandleResponse(HttpResponseMessage response)
+        {
+            if (response.IsSuccessStatusCode) return;
+            Func<Task<ApiErrorResponse>> getResponse = async () => JsonSerializer.Deserialize<ApiErrorResponse>(await response.Content.ReadAsStringAsync());
+            switch (response.StatusCode)
+            {
+                case HttpStatusCode.BadRequest:
+                    throw new NightfallInvalidRequest400(await getResponse());
+                case HttpStatusCode.Unauthorized:
+                    throw new NightfallAuthenticationFailure401(await getResponse());
+                case HttpStatusCode.NotFound:
+                    throw new NightfallInvalidFileId404(await getResponse());
+                case HttpStatusCode.Conflict:
+                    throw new NightfallIncorrectFileState409(await getResponse());
+                case HttpStatusCode.UnprocessableEntity:
+                    throw new NightfallUnprocessableRequestPayload422(await getResponse());
+                case HttpStatusCode.TooManyRequests:
+                    throw new NightfallRateLimit429(await getResponse());
+                case HttpStatusCode.InternalServerError:
+                    throw new NightfallInternalServer500(await getResponse());
+                default:
+                    throw new NightfallUnknownExceptionResponse(await getResponse());
+            }
         }
     }
 }
